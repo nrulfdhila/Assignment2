@@ -1,19 +1,19 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Simple Profile Page',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
       home: ProfilePage(),
     );
   }
@@ -25,11 +25,23 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _ageController = TextEditingController();
-  File? _image;
-  String? _name;
-  int? _age;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  File? _profileImage;
+  String _name = '';
+  String _age = '';
+
+  final ImagePicker _picker = ImagePicker();
+
+  // Function to pick an image from the gallery
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -38,78 +50,74 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
-    setState(() {
-      if (pickedImage != null) {
-        _image = File(pickedImage.path);
-      }
-    });
-  }
-
-  void _submitProfile() {
-    setState(() {
-      _name = _nameController.text;
-      _age = int.tryParse(_ageController.text);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile Page'),
+        title: const Text('Simple Profile Page'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Picture Section
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.grey[200],
-                  backgroundImage: _image != null ? FileImage(_image!) : null,
-                  child: _image == null
-                      ? Icon(Icons.camera_alt, size: 50, color: Colors.grey)
-                      : null,
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-            // Name TextField
+            // Name Input
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Name',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 16),
-            // Age TextField
+            const SizedBox(height: 16),
+
+            // Age Input
             TextField(
               controller: _ageController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Age',
                 border: OutlineInputBorder(),
               ),
+              keyboardType: TextInputType.number,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
+
+            // Upload Image Button
+            ElevatedButton(
+              onPressed: _pickImage,
+              child: const Text('Upload Profile Picture'),
+            ),
+            const SizedBox(height: 16),
+
             // Submit Button
             ElevatedButton(
-              onPressed: _submitProfile,
-              child: Text('Submit Profile'),
+              onPressed: () {
+                setState(() {
+                  _name = _nameController.text;
+                  _age = _ageController.text;
+                });
+              },
+              child: const Text('Submit'),
             ),
-            SizedBox(height: 16),
-            // Display Name and Age
-            if (_name != null && _age != null)
-              Text(
-                'Name: $_name\nAge: $_age',
-                style: TextStyle(fontSize: 18),
+            const SizedBox(height: 32),
+
+            // Display Section
+            if (_name.isNotEmpty) Text('Name: $_name', style: const TextStyle(fontSize: 18)),
+            if (_age.isNotEmpty) Text('Age: $_age', style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 16),
+
+            // Display Profile Image
+            if (_profileImage != null)
+              Image.file(
+                _profileImage!,
+                height: 150,
+                width: 150,
+                fit: BoxFit.cover,
+              )
+            else
+              const Placeholder(
+                fallbackHeight: 150,
+                fallbackWidth: 150,
               ),
           ],
         ),
